@@ -1,15 +1,14 @@
 import { Ship } from "@staratlas/sage";
-import { PublicKey } from "@solana/web3.js";
-import { readFromRPCOrError } from "@staratlas/data-source";
+import { readAllFromRPC } from "@staratlas/data-source";
 import { AppContext } from "./appContext";
 
-export function getShipByKey(key: PublicKey, context: AppContext): Promise<Ship> {
+export async function getShips(context: AppContext): Promise<Ship[]> {
 
-    return readFromRPCOrError(
+    return (await readAllFromRPC(
         context.connection,
         context.sage,
-        key,
         Ship,
-        'confirmed',
-    );
+        'confirmed'))
+        .filter(p => p.type === 'ok')
+        .map(p => (p as any).data as Ship);
 }

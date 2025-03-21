@@ -38,6 +38,7 @@ export class TaskList extends OpenAPIRoute {
 	};
 
 	async handle(c) {
+
 		// Get validated data
 		const data = await this.getValidatedData<typeof this.schema>();
 
