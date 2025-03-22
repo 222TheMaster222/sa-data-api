@@ -2,7 +2,7 @@ import { Bool, Num, OpenAPIRoute } from "chanfana";
 import { z } from "zod";
 import { Task } from "../types";
 import { createAppContext, getShips } from "sage";
-import { Connection } from "@solana/web3.js";
+import { Connection, PublicKey } from "@solana/web3.js";
 import { Ship, ShipStats } from "@staratlas/sage";
 import { byteArrayToString } from "@staratlas/data-source";
 import { BN } from "bn.js";
@@ -47,9 +47,26 @@ export class ShipList extends OpenAPIRoute {
 		const connection = new Connection(c.env.RPC_URL, { commitment: "confirmed" })
 		const context = createAppContext(connection)
 
-		const ships = await getShips(context);
+		const allShips = await getShips(context);
 
-		const csv = shipsToCsv(ships);
+		const latestShips = allShips.filter(s => s.data.next.key.equals(new PublicKey('11111111111111111111111111111111')))
+
+		// Sort: first by sizeClass, then by name
+		const sortedShips = Array.from(latestShips).sort((a, b) => {
+			const sizeA = a.data.sizeClass;
+			const sizeB = b.data.sizeClass;
+
+			// Sort numerically by sizeClass first
+			if (sizeA !== sizeB) {
+				return sizeA - sizeB;
+			}
+
+			const nameA = byteArrayToString(a.data.name).toLowerCase();
+			const nameB = byteArrayToString(b.data.name).toLowerCase();
+			return nameA.localeCompare(nameB);
+		});
+
+		const csv = shipsToCsv(sortedShips);
 
 		return new Response(csv, {
 			headers: {
@@ -60,60 +77,46 @@ export class ShipList extends OpenAPIRoute {
 	}
 }
 
-
 function shipsToCsv(ships: Ship[]): string {
-	// Step 1: Deduplicate ships by mint, keeping highest updateId
-	const latestByMint = new Map<string, Ship>();
-
-	for (const ship of ships) {
-		const mint = ship.data.mint.toBase58();
-		const current = latestByMint.get(mint);
-
-		if (!current || new BN(ship.data.updateId).gt(new BN(current.data.updateId))) {
-			latestByMint.set(mint, ship);
-		}
-	}
-
-	// Step 2: Convert to array and sort by name
-	const dedupedShips = Array.from(latestByMint.values()).sort((a, b) => {
-		const nameA = byteArrayToString(a.data.name).toLowerCase();
-		const nameB = byteArrayToString(b.data.name).toLowerCase();
-		return nameA.localeCompare(nameB);
-	});
 
 	// Step 3: Convert to CSV rows
 	const rows = [
 		[
-			'Name', 'Cargo Capacity', 'Fuel Capacity', 'Ammo Capacity', 'Food Consumption Rate', 'Ammo Consumption Rate', 'Mining Rate',
-			'Subwarp Speed', 'Warp Speed', 'Max Warp Distance', 'Warp Cool Down', 'Subwarp Fuel Consumption Rate', 'Warp Fuel Consumption Rate', 'Planet Exit Fuel Amount',
-			'Scan Cool Down', 'Scan Cost', 'SDU Per Scan', 'Passenger Capacity', 'Required Crew',
+			'Name', 'Class', 'Cargo Capacity', 'Fuel Capacity', 'Ammo Capacity', 'Food Consumption Rate', 'Ammo Consumption Rate', 'Mining Rate',
+			'Subwarp Speed', 'Warp Speed', 'Max Warp Distance', 'Warp Cool Down', 'Warp Fuel Consumption Rate', 'Subwarp Fuel Consumption Rate', 'Planet Exit Fuel Amount',
+			'Scan Cool Down', 'Required Crew', 'Respawn Time', 'Scan Cost', 'SDU Per Scan', 'Passenger Capacity',
 		], // CSV header
-		...dedupedShips.map((ship) => {
+		...ships.map((ship) => {
 			const { cargoStats, miscStats, movementStats } = ship.data.stats as ShipStats;
 			return [
 				byteArrayToString(ship.data.name),
+				ship.data.sizeClass,
 				cargoStats.cargoCapacity,
 				cargoStats.fuelCapacity,
 				cargoStats.ammoCapacity,
-				cargoStats.foodConsumptionRate,
-				cargoStats.ammoConsumptionRate,
-				cargoStats.miningRate,
-				movementStats.subwarpSpeed,
-				movementStats.warpSpeed,
-				movementStats.maxWarpDistance,
+				scaleStat(cargoStats.foodConsumptionRate, 4),
+				scaleStat(cargoStats.ammoConsumptionRate, 4),
+				scaleStat(cargoStats.miningRate, 4),
+				scaleStat(movementStats.subwarpSpeed, 6),
+				scaleStat(movementStats.warpSpeed, 6),
+				scaleStat(movementStats.maxWarpDistance, 2),
 				movementStats.warpCoolDown,
-				movementStats.subwarpFuelConsumptionRate,
-				movementStats.warpFuelConsumptionRate,
+				scaleStat(movementStats.warpFuelConsumptionRate, 2),
+				scaleStat(movementStats.subwarpFuelConsumptionRate, 2),
 				movementStats.planetExitFuelAmount,
 				miscStats.scanCoolDown,
+				miscStats.requiredCrew,
+				miscStats.respawnTime,
 				miscStats.scanCost,
 				miscStats.sduPerScan,
 				miscStats.passengerCapacity,
-				miscStats.requiredCrew,
-				ship.data.updateId,
 			]
 		}),
 	];
 
 	return rows.map(row => row.join(',')).join('\n');
+}
+
+function scaleStat(value: number, precision: number) {
+	return value / Math.pow(10, precision);
 }
