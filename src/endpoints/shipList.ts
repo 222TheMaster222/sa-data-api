@@ -5,7 +5,6 @@ import { createAppContext, getShips } from "sage";
 import { Connection, PublicKey } from "@solana/web3.js";
 import { Ship, ShipStats } from "@staratlas/sage";
 import { byteArrayToString } from "@staratlas/data-source";
-import { BN } from "bn.js";
 
 export class ShipList extends OpenAPIRoute {
 	schema = {
