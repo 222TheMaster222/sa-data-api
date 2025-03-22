@@ -3,7 +3,7 @@ import { z } from "zod";
 import { Task } from "../types";
 import { createAppContext, getShips } from "sage";
 import { Connection } from "@solana/web3.js";
-import { Ship } from "@staratlas/sage";
+import { Ship, ShipStats } from "@staratlas/sage";
 import { byteArrayToString } from "@staratlas/data-source";
 import { BN } from "bn.js";
 
@@ -83,15 +83,36 @@ function shipsToCsv(ships: Ship[]): string {
 
 	// Step 3: Convert to CSV rows
 	const rows = [
-		['pubkey', 'name', 'mint', 'version', 'gameId', 'updateId'], // CSV header
-		...dedupedShips.map((ship) => [
-			ship.key.toBase58(),
-			byteArrayToString(ship.data.name),
-			ship.data.mint.toBase58(),
-			ship.data.version.toString(),
-			ship.data.gameId.toBase58(),
-			ship.data.updateId.toString(),
-		]),
+		[
+			'Name', 'Cargo Capacity', 'Fuel Capacity', 'Ammo Capacity', 'Food Consumption Rate', 'Ammo Consumption Rate', 'Mining Rate',
+			'Subwarp Speed', 'Warp Speed', 'Max Warp Distance', 'Warp Cool Down', 'Subwarp Fuel Consumption Rate', 'Warp Fuel Consumption Rate', 'Planet Exit Fuel Amount',
+			'Scan Cool Down', 'Scan Cost', 'SDU Per Scan', 'Passenger Capacity', 'Required Crew',
+		], // CSV header
+		...dedupedShips.map((ship) => {
+			const { cargoStats, miscStats, movementStats } = ship.data.stats as ShipStats;
+			return [
+				byteArrayToString(ship.data.name),
+				cargoStats.cargoCapacity,
+				cargoStats.fuelCapacity,
+				cargoStats.ammoCapacity,
+				cargoStats.foodConsumptionRate,
+				cargoStats.ammoConsumptionRate,
+				cargoStats.miningRate,
+				movementStats.subwarpSpeed,
+				movementStats.warpSpeed,
+				movementStats.maxWarpDistance,
+				movementStats.warpCoolDown,
+				movementStats.subwarpFuelConsumptionRate,
+				movementStats.warpFuelConsumptionRate,
+				movementStats.planetExitFuelAmount,
+				miscStats.scanCoolDown,
+				miscStats.scanCost,
+				miscStats.sduPerScan,
+				miscStats.passengerCapacity,
+				miscStats.requiredCrew,
+				ship.data.updateId,
+			]
+		}),
 	];
 
 	return rows.map(row => row.join(',')).join('\n');
