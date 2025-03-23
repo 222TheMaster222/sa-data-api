@@ -1,11 +1,11 @@
 import { Bool, Num, OpenAPIRoute } from "chanfana";
 import { z } from "zod";
 import { Task } from "../types";
-import { createAppContext, getMineItems, getResources } from "sage";
+import { createAppContext, getMineItems, getPlanets, getResources } from "sage";
 import { Connection } from "@solana/web3.js";
-import { LocationType, Ship, ShipStats } from "@staratlas/sage";
+import { LocationType, PlanetType, Ship, ShipStats } from "@staratlas/sage";
 import { byteArrayToString } from "@staratlas/data-source";
-import { scaleStat } from './utils'
+import { scaleStat, sectorToString } from './utils'
 import Papa from 'papaparse';
 
 export class ResourceList extends OpenAPIRoute {
@@ -50,23 +50,23 @@ export class ResourceList extends OpenAPIRoute {
 
 		const allResources = await getResources(context);
 		const allMineItems = await getMineItems(context);
+		const allPlanets = await getPlanets(context);
 
 		const blobs = allResources.map(r => ({
 			resource: r,
 			mineItem: allMineItems.find(mi => r.data.mineItem.equals(mi.key)),
+			planet: allPlanets.find(p => r.data.locationType === LocationType.Planet && r.data.location.equals(p.key))
 		}))
 
-		LocationType
-
 		const resourceModels = blobs.map(x => ({
-			locationKey: x.resource.data.location.toBase58(),
-			locationType: LocationType[x.resource.data.locationType],
+			locationName: byteArrayToString(x.planet.data.name),
+			sector: sectorToString(x.planet.data.sector),
 			resourceName: byteArrayToString(x.mineItem.data.name),
 			resourceHardness: scaleStat(x.mineItem.data.resourceHardness, 2),
 			systemRichness: scaleStat(x.resource.data.systemRichness, 2),
 		}));
 
-		const sortedResourceModels = resourceModels.sort((a, b) => a.resourceName.localeCompare(b.resourceName))
+		const sortedResourceModels = resourceModels.sort((a, b) => a.locationName.localeCompare(b.locationName))
 
 		const csv = Papa.unparse(sortedResourceModels)
 
