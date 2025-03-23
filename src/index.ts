@@ -7,6 +7,7 @@ import { TaskList } from "./endpoints/taskList";
 import { ShipList } from "endpoints/shipList";
 import { MineItemList } from "endpoints/mineItemList";
 import { ResourceList } from "endpoints/resourceList";
+import { SectorList } from "endpoints/sectorList";
 
 // Start a Hono app
 const app = new Hono();
@@ -19,6 +20,7 @@ const openapi = fromHono(app, {
 // Register OpenAPI endpoints
 
 openapi.get("/api/mineitems", MineItemList);
+openapi.get("/api/sectors", SectorList);
 openapi.get("/api/ships", ShipList);
 openapi.get("/api/resources", ResourceList);
 
