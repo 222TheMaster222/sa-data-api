@@ -1,11 +1,11 @@
 import { Bool, Num, OpenAPIRoute } from "chanfana";
 import { z } from "zod";
 import { Task } from "../types";
-import { createAppContext, getMineItems, getPlanets, getResources } from "sage";
+import { createAppContext, getMineItems, getPlanets, getResources, getSectors } from "sage";
 import { Connection } from "@solana/web3.js";
-import { LocationType, PlanetType, Ship, ShipStats } from "@staratlas/sage";
+import { LocationType } from "@staratlas/sage";
 import { byteArrayToString } from "@staratlas/data-source";
-import { scaleStat, sectorToString } from './utils'
+import { coordinatesEqual, scaleStat, sectorToString } from './utils'
 import Papa from 'papaparse';
 
 export class ResourceList extends OpenAPIRoute {
@@ -51,22 +51,29 @@ export class ResourceList extends OpenAPIRoute {
 		const allResources = await getResources(context);
 		const allMineItems = await getMineItems(context);
 		const allPlanets = await getPlanets(context);
+		const allSectors = await getSectors(context);
 
-		const blobs = allResources.map(r => ({
-			resource: r,
-			mineItem: allMineItems.find(mi => r.data.mineItem.equals(mi.key)),
-			planet: allPlanets.find(p => r.data.locationType === LocationType.Planet && r.data.location.equals(p.key))
-		}))
+		const blobs = allResources.map(resource => {
+
+			const mineItem = allMineItems.find(mi => resource.data.mineItem.equals(mi.key))
+			const planet = allPlanets.find(p => resource.data.locationType === LocationType.Planet && resource.data.location.equals(p.key));
+			const sector = allSectors.find(s => coordinatesEqual(planet.data.sector, s.data.coordinates))
+
+			return {
+				resource,
+				mineItem,
+				sector,
+			}
+		})
 
 		const resourceModels = blobs.map(x => ({
-			locationName: byteArrayToString(x.planet.data.name),
-			sector: sectorToString(x.planet.data.sector),
-			resourceName: byteArrayToString(x.mineItem.data.name),
-			resourceHardness: scaleStat(x.mineItem.data.resourceHardness, 2),
+			sectorName: byteArrayToString(x.sector.data.name),
+			name: byteArrayToString(x.mineItem.data.name),
+			hardness: scaleStat(x.mineItem.data.resourceHardness, 2),
 			systemRichness: scaleStat(x.resource.data.systemRichness, 2),
 		}));
 
-		const sortedResourceModels = resourceModels.sort((a, b) => a.locationName.localeCompare(b.locationName))
+		const sortedResourceModels = resourceModels.sort((a, b) => a.sectorName.localeCompare(b.sectorName))
 
 		const csv = Papa.unparse(sortedResourceModels)
 
@@ -77,51 +84,4 @@ export class ResourceList extends OpenAPIRoute {
 			},
 		});
 	}
-}
-
-type MineItemModel = {
-	key: string
-	name: string
-	resourceHardness: number
-	mint: string
-}
-
-function shipsToCsv(ships: Ship[]): string {
-
-	// Step 3: Convert to CSV rows
-	const rows = [
-		[
-			'Name', 'Class', 'Cargo Capacity', 'Fuel Capacity', 'Ammo Capacity', 'Food Consumption Rate', 'Ammo Consumption Rate', 'Mining Rate',
-			'Subwarp Speed', 'Warp Speed', 'Max Warp Distance', 'Warp Cool Down', 'Warp Fuel Consumption Rate', 'Subwarp Fuel Consumption Rate', 'Planet Exit Fuel Amount',
-			'Scan Cool Down', 'Required Crew', 'Respawn Time', 'Scan Cost', 'SDU Per Scan', 'Passenger Capacity',
-		], // CSV header
-		...ships.map((ship) => {
-			const { cargoStats, miscStats, movementStats } = ship.data.stats as ShipStats;
-			return [
-				byteArrayToString(ship.data.name),
-				ship.data.sizeClass,
-				cargoStats.cargoCapacity,
-				cargoStats.fuelCapacity,
-				cargoStats.ammoCapacity,
-				scaleStat(cargoStats.foodConsumptionRate, 4),
-				scaleStat(cargoStats.ammoConsumptionRate, 4),
-				scaleStat(cargoStats.miningRate, 4),
-				scaleStat(movementStats.subwarpSpeed, 6),
-				scaleStat(movementStats.warpSpeed, 6),
-				scaleStat(movementStats.maxWarpDistance, 2),
-				movementStats.warpCoolDown,
-				scaleStat(movementStats.warpFuelConsumptionRate, 2),
-				scaleStat(movementStats.subwarpFuelConsumptionRate, 2),
-				movementStats.planetExitFuelAmount,
-				miscStats.scanCoolDown,
-				miscStats.requiredCrew,
-				miscStats.respawnTime,
-				miscStats.scanCost,
-				miscStats.sduPerScan,
-				miscStats.passengerCapacity,
-			]
-		}),
-	];
-
-	return rows.map(row => row.join(',')).join('\n');
 }

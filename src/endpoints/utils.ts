@@ -12,3 +12,8 @@ export function sectorToString(sector: BN[]): string {
 
     return `${x},${y}`
 }
+
+export function coordinatesEqual(a: BN[], b: BN[]): boolean {
+
+    return a[0].eq(b[0]) && a[1].eq(b[1])
+}
