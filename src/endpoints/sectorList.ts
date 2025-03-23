@@ -1,6 +1,5 @@
-import { Bool, Num, OpenAPIRoute } from "chanfana";
+import { OpenAPIRoute } from "chanfana";
 import { z } from "zod";
-import { Task } from "../types";
 import { createAppContext, getSectors } from "sage";
 import { Connection } from "@solana/web3.js";
 import { byteArrayToString } from "@staratlas/data-source";
@@ -9,33 +8,14 @@ import Papa from 'papaparse';
 
 export class SectorList extends OpenAPIRoute {
 	schema = {
-		tags: ["Sector"],
-		summary: "List Sector",
-		request: {
-			query: z.object({
-				page: Num({
-					description: "Page number",
-					default: 0,
-				}),
-				isCompleted: Bool({
-					description: "Filter by completed flag",
-					required: false,
-				}),
-			}),
-		},
+		tags: ["Sectors"],
+		summary: "List Sectors",
 		responses: {
 			"200": {
 				description: "Returns a list of sectors",
 				content: {
-					"application/json": {
-						schema: z.object({
-							series: z.object({
-								success: Bool(),
-								result: z.object({
-									tasks: Task.array(),
-								}),
-							}),
-						}),
+					"text/csv": {
+						schema: z.string(),
 					},
 				},
 			},

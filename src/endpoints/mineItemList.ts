@@ -1,41 +1,21 @@
-import { Bool, Num, OpenAPIRoute } from "chanfana";
+import { OpenAPIRoute } from "chanfana";
 import { z } from "zod";
-import { Task } from "../types";
 import { createAppContext, getMineItems } from "sage";
-import { Connection} from "@solana/web3.js";
+import { Connection } from "@solana/web3.js";
 import { byteArrayToString } from "@staratlas/data-source";
 import { scaleStat } from './utils'
 import Papa from 'papaparse';
 
 export class MineItemList extends OpenAPIRoute {
 	schema = {
-		tags: ["Mine Item"],
-		summary: "List Mine Item",
-		request: {
-			query: z.object({
-				page: Num({
-					description: "Page number",
-					default: 0,
-				}),
-				isCompleted: Bool({
-					description: "Filter by completed flag",
-					required: false,
-				}),
-			}),
-		},
+		tags: ["Mine Items"],
+		summary: "List Mine Items",
 		responses: {
 			"200": {
 				description: "Returns a list of mine items",
 				content: {
-					"application/json": {
-						schema: z.object({
-							series: z.object({
-								success: Bool(),
-								result: z.object({
-									tasks: Task.array(),
-								}),
-							}),
-						}),
+					"text/csv": {
+						schema: z.string(),
 					},
 				},
 			},

@@ -1,6 +1,5 @@
-import { Bool, Num, OpenAPIRoute } from "chanfana";
+import { OpenAPIRoute } from "chanfana";
 import { z } from "zod";
-import { Task } from "../types";
 import { createAppContext, getShips } from "sage";
 import { Connection, PublicKey } from "@solana/web3.js";
 import { Ship, ShipStats } from "@staratlas/sage";
@@ -9,33 +8,14 @@ import { scaleStat } from "./utils";
 
 export class ShipList extends OpenAPIRoute {
 	schema = {
-		tags: ["Tasks"],
-		summary: "List Tasks",
-		request: {
-			query: z.object({
-				page: Num({
-					description: "Page number",
-					default: 0,
-				}),
-				isCompleted: Bool({
-					description: "Filter by completed flag",
-					required: false,
-				}),
-			}),
-		},
+		tags: ["Ships"],
+		summary: "List Ships",
 		responses: {
 			"200": {
-				description: "Returns a list of tasks",
+				description: "Returns a list of ships",
 				content: {
-					"application/json": {
-						schema: z.object({
-							series: z.object({
-								success: Bool(),
-								result: z.object({
-									tasks: Task.array(),
-								}),
-							}),
-						}),
+					"text/csv": {
+						schema: z.string(),
 					},
 				},
 			},
