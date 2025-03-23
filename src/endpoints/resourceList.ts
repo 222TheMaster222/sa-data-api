@@ -48,16 +48,23 @@ export class ResourceList extends OpenAPIRoute {
 		const connection = new Connection(c.env.RPC_URL, { commitment: "confirmed" })
 		const context = createAppContext(connection)
 
-		const allResources = await getResources(context);
-		const allMineItems = await getMineItems(context);
-		const allPlanets = await getPlanets(context);
-		const allSectors = await getSectors(context);
+		const [allResources, allMineItems, allPlanets, allSectors] = await Promise.all([
+			getResources(context),
+			getMineItems(context),
+			getPlanets(context),
+			getSectors(context),
+		]);
+
+		const mineItemMap = new Map(allMineItems.map(mi => [mi.key.toBase58(), mi]));
+		const planetMap = new Map(allPlanets.map(p => [p.key.toBase58(), p]));
+		const sectorByCoord = new Map(
+			allSectors.map(s => [sectorToString(s.data.coordinates), s])
+		);
 
 		const blobs = allResources.map(resource => {
-
-			const mineItem = allMineItems.find(mi => resource.data.mineItem.equals(mi.key))
-			const planet = allPlanets.find(p => resource.data.locationType === LocationType.Planet && resource.data.location.equals(p.key));
-			const sector = allSectors.find(s => coordinatesEqual(planet.data.sector, s.data.coordinates))
+			const mineItem = mineItemMap.get(resource.data.mineItem.toBase58());
+			const planet = planetMap.get(resource.data.location.toBase58());
+			const sector = sectorByCoord.get(sectorToString(planet.data.sector));
 
 			return {
 				resource,
