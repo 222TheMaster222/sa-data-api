@@ -55,6 +55,7 @@ export class ResourceList extends OpenAPIRoute {
 			getSectors(context),
 		]);
 
+		// If CPU performance is a problem, we could swap sectorName with planetName :shrug:
 		const mineItemMap = new Map(allMineItems.map(mi => [mi.key.toBase58(), mi]));
 		const planetMap = new Map(allPlanets.map(p => [p.key.toBase58(), p]));
 		const sectorByCoord = new Map(
