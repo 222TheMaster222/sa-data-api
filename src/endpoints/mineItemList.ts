@@ -60,7 +60,7 @@ export class MineItemList extends OpenAPIRoute {
 		const sortedMineItemModels = mineItemModels.sort((a, b) => a.name.localeCompare(b.name))
 
 		const csv = Papa.unparse({
-			fields: ['name', 'resourceHardness', 'mint'],
+			fields: ['name', 'resourceHardness'],
 			data: sortedMineItemModels
 		})
 
