@@ -1,15 +1,17 @@
 import { Bool, Num, OpenAPIRoute } from "chanfana";
 import { z } from "zod";
 import { Task } from "../types";
-import { createAppContext, getShips } from "sage";
+import { createAppContext, getMineItems, getResources, getShips } from "sage";
 import { Connection, PublicKey } from "@solana/web3.js";
 import { Ship, ShipStats } from "@staratlas/sage";
 import { byteArrayToString } from "@staratlas/data-source";
+import { scaleStat } from './utils'
+import Papa from 'papaparse';
 
-export class ShipList extends OpenAPIRoute {
+export class MineItemList extends OpenAPIRoute {
 	schema = {
-		tags: ["Tasks"],
-		summary: "List Tasks",
+		tags: ["Mine Item"],
+		summary: "List Mine Item",
 		request: {
 			query: z.object({
 				page: Num({
@@ -24,7 +26,7 @@ export class ShipList extends OpenAPIRoute {
 		},
 		responses: {
 			"200": {
-				description: "Returns a list of tasks",
+				description: "Returns a list of mine items",
 				content: {
 					"application/json": {
 						schema: z.object({
@@ -46,26 +48,21 @@ export class ShipList extends OpenAPIRoute {
 		const connection = new Connection(c.env.RPC_URL, { commitment: "confirmed" })
 		const context = createAppContext(connection)
 
-		const allShips = await getShips(context);
+		const allMineItems = await getMineItems(context);
 
-		const latestShips = allShips.filter(s => s.data.next.key.equals(new PublicKey('11111111111111111111111111111111')))
+		const mineItemModels = allMineItems.map(src => ({
+			name: byteArrayToString(src.data.name),
+			key: src.key.toBase58(),
+			resourceHardness: scaleStat(src.data.resourceHardness, 2),
+			mint: src.data.mint.toBase58(),
+		}));
 
-		// Sort: first by sizeClass, then by name
-		const sortedShips = Array.from(latestShips).sort((a, b) => {
-			const sizeA = a.data.sizeClass;
-			const sizeB = b.data.sizeClass;
+		const sortedMineItemModels = mineItemModels.sort((a, b) => a.name.localeCompare(b.name))
 
-			// Sort numerically by sizeClass first
-			if (sizeA !== sizeB) {
-				return sizeA - sizeB;
-			}
-
-			const nameA = byteArrayToString(a.data.name).toLowerCase();
-			const nameB = byteArrayToString(b.data.name).toLowerCase();
-			return nameA.localeCompare(nameB);
-		});
-
-		const csv = shipsToCsv(sortedShips);
+		const csv = Papa.unparse({
+			fields: ['name', 'resourceHardness', 'mint'],
+			data: sortedMineItemModels
+		})
 
 		return new Response(csv, {
 			headers: {
@@ -74,6 +71,13 @@ export class ShipList extends OpenAPIRoute {
 			},
 		});
 	}
+}
+
+type MineItemModel = {
+	key: string
+	name: string
+	resourceHardness: number
+	mint: string
 }
 
 function shipsToCsv(ships: Ship[]): string {
