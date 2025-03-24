@@ -1,6 +1,6 @@
 import { OpenAPIRoute } from "chanfana";
 import { z } from "zod";
-import { createAppContext, getMineItems, getPlanets, getResources, getSectors } from "sage";
+import { createAppContext, getMineItems, getPlanets, getResources, getSectorsByNumPlanets } from "sage";
 import { Connection } from "@solana/web3.js";
 import { byteArrayToString } from "@staratlas/data-source";
 import { scaleStat, sectorToString } from './utils'
@@ -31,7 +31,7 @@ export class ResourceList extends OpenAPIRoute {
 			getResources(context),
 			getMineItems(context),
 			getPlanets(context),
-			getSectors(context),
+			getSectorsByNumPlanets(1, context),
 		]);
 
 		// If CPU performance is a problem, we could swap sectorName with planetName :shrug:
