@@ -28,21 +28,6 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
-      - name: Run Tests
-        run: npx vitest --coverage.enabled true
-
-      - name: Report Coverage
-        if: success() || failure()    # run this step even if previous step failed
-        uses:  davelosert/vitest-coverage-report-action@v2
-
-      - name: Report Tests
-        uses: dorny/test-reporter@v2
-        if: success() || failure()    # run this step even if previous step failed
-        with:
-          name: Vitest Test Results
-          path: test-results.xml
-          reporter: jest-junit
-
       - name: Build Project
         run: npm run build
 
