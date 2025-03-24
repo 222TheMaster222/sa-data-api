@@ -22,7 +22,7 @@ export class MineItemList extends OpenAPIRoute {
 		},
 	};
 
-	async handle(c) {
+	async handle(c: { env: Env }) {
 
 		const connection = new Connection(c.env.RPC_URL, { commitment: "confirmed" })
 		const context = createAppContext(connection)
