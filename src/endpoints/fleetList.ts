@@ -27,17 +27,14 @@ export class FleetList extends OpenAPIRoute {
 		const connection = new Connection(c.env.RPC_URL, { commitment: "confirmed" })
 		const context = createAppContext(connection)
 
-		/*
+		const owner = new PublicKey('DRckeF77miyiTXTJzRJxP68XqoUK9Pb3j2SWrpsHC6cC')
+
 		const [ownedFleets, rentedFleets,] = await Promise.all([
-			getFleetsByOwnerProfile(new PublicKey('DRckeF77miyiTXTJzRJxP68XqoUK9Pb3j2SWrpsHC6cC'), context),
-			getFleetsBySubProfile(new PublicKey('DRckeF77miyiTXTJzRJxP68XqoUK9Pb3j2SWrpsHC6cC'), context)
+			getFleetsByOwnerProfile(owner, context),
+			getFleetsBySubProfile(owner, context)
 		])
 
 		const allFleets = [...ownedFleets, ...rentedFleets]
-		*/
-
-		const playerProfile = new PublicKey('DRckeF77miyiTXTJzRJxP68XqoUK9Pb3j2SWrpsHC6cC');
-		const allFleets = (await getFleets(context)).filter(f => f.data.ownerProfile.equals(playerProfile) || f.data.subProfile.key.equals(playerProfile));
 
 		const sortedFleets = Array.from(allFleets).sort((a, b) => {
 			const nameA = byteArrayToString(a.data.fleetLabel).toLowerCase();
