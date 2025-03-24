@@ -54,13 +54,13 @@ export class ResourceList extends OpenAPIRoute {
 		})
 
 		const resourceModels = blobs.map(x => ({
-			sectorName: byteArrayToString(x.sector.data.name),
-			name: byteArrayToString(x.mineItem.data.name),
-			hardness: scaleStat(x.mineItem.data.resourceHardness, 2),
-			systemRichness: scaleStat(x.resource.data.systemRichness, 2),
+			'Sector Name': byteArrayToString(x.sector.data.name),
+			'Name': byteArrayToString(x.mineItem.data.name),
+			'Hardness': scaleStat(x.mineItem.data.resourceHardness, 2),
+			'Richness': scaleStat(x.resource.data.systemRichness, 2),
 		}));
 
-		const sortedResourceModels = resourceModels.sort((a, b) => a.sectorName.localeCompare(b.sectorName))
+		const sortedResourceModels = resourceModels.sort((a, b) => a["Sector Name"].localeCompare(b["Sector Name"]))
 
 		const csv = Papa.unparse(sortedResourceModels)
 
