@@ -1,7 +1,7 @@
 import { OpenAPIRoute } from "chanfana";
 import { z } from "zod";
-import { createAppContext, getFleets } from "sage";
-import { Connection } from "@solana/web3.js";
+import { createAppContext, getFleets, getFleetsByOwnerProfile, getFleetsBySubProfile } from "sage";
+import { Connection, PublicKey } from "@solana/web3.js";
 import { Fleet, ShipStats } from "@staratlas/sage";
 import { byteArrayToString } from "@staratlas/data-source";
 import { scaleStat } from "./utils";
@@ -27,7 +27,17 @@ export class FleetList extends OpenAPIRoute {
 		const connection = new Connection(c.env.RPC_URL, { commitment: "confirmed" })
 		const context = createAppContext(connection)
 
-		const allFleets = await getFleets(context);
+		/*
+		const [ownedFleets, rentedFleets,] = await Promise.all([
+			getFleetsByOwnerProfile(new PublicKey('DRckeF77miyiTXTJzRJxP68XqoUK9Pb3j2SWrpsHC6cC'), context),
+			getFleetsBySubProfile(new PublicKey('DRckeF77miyiTXTJzRJxP68XqoUK9Pb3j2SWrpsHC6cC'), context)
+		])
+
+		const allFleets = [...ownedFleets, ...rentedFleets]
+		*/
+
+		const playerProfile = new PublicKey('DRckeF77miyiTXTJzRJxP68XqoUK9Pb3j2SWrpsHC6cC');
+		const allFleets = (await getFleets(context)).filter(f => f.data.ownerProfile.equals(playerProfile) || f.data.subProfile.key.equals(playerProfile));
 
 		const sortedFleets = Array.from(allFleets).sort((a, b) => {
 			const nameA = byteArrayToString(a.data.fleetLabel).toLowerCase();
