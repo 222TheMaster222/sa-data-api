@@ -30,13 +30,12 @@ export class MineItemList extends OpenAPIRoute {
 		const allMineItems = await getMineItems(context);
 
 		const mineItemModels = allMineItems.map(src => ({
-			name: byteArrayToString(src.data.name),
-			key: src.key.toBase58(),
-			resourceHardness: scaleStat(src.data.resourceHardness, 2),
-			mint: src.data.mint.toBase58(),
+			'Name': byteArrayToString(src.data.name),
+			'Hardness': scaleStat(src.data.resourceHardness, 2),
 		}));
 
-		const sortedMineItemModels = mineItemModels.sort((a, b) => a.name.localeCompare(b.name))
+		const sortedMineItemModels = mineItemModels
+			.sort((a, b) => a.Name.localeCompare(b.Name))
 
 		const csv = Papa.unparse({
 			fields: ['Name', 'Hardness'],
