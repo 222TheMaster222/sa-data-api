@@ -63,7 +63,7 @@ function fleetsToCsv(fleets: Fleet[]): string {
 	// Step 3: Convert to CSV rows
 	const rows = [
 		[
-			'Name', 'Cargo Capacity', 'Fuel Capacity', 'Ammo Capacity', 'Food Consumption Rate', 'Ammo Consumption Rate', 'Mining Rate',
+			'Name', 'Size', 'Cargo Capacity', 'Fuel Capacity', 'Ammo Capacity', 'Food Consumption Rate', 'Ammo Consumption Rate', 'Mining Rate',
 			'Subwarp Speed', 'Warp Speed', 'Max Warp Distance', 'Warp Cool Down', 'Warp Fuel Consumption Rate', 'Subwarp Fuel Consumption Rate', 'Planet Exit Fuel Amount',
 			'Scan Cool Down', 'Required Crew', 'Respawn Time', 'Scan Cost', 'SDU Per Scan', 'Passenger Capacity',
 		], // CSV header
@@ -71,6 +71,7 @@ function fleetsToCsv(fleets: Fleet[]): string {
 			const { cargoStats, miscStats, movementStats } = fleet.data.stats as ShipStats;
 			return [
 				byteArrayToString(fleet.data.fleetLabel),
+				Fleet.getFleetSize(fleet.data.shipCounts),
 				cargoStats.cargoCapacity,
 				cargoStats.fuelCapacity,
 				cargoStats.ammoCapacity,
