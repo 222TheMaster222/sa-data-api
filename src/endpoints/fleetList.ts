@@ -1,6 +1,6 @@
 import { OpenAPIRoute } from "chanfana";
 import { z } from "zod";
-import { createAppContext, getFleets, getFleetsByOwnerProfile, getFleetsBySubProfile } from "sage";
+import { createAppContext, getFleetsByOwnerProfile, getFleetsBySubProfile } from "sage";
 import { Connection, PublicKey } from "@solana/web3.js";
 import { Fleet, ShipStats } from "@staratlas/sage";
 import { byteArrayToString } from "@staratlas/data-source";
@@ -11,9 +11,9 @@ export class FleetList extends OpenAPIRoute {
 		tags: ["Fleets"],
 		summary: "List Fleets",
 		request: {
-		  query: z.object({
-			playerProfile: z.string().min(32).max(44), // Solana pubkey
-		  }),
+			query: z.object({
+				playerProfile: z.string().min(32).max(44), // Solana pubkey
+			}),
 		},
 		responses: {
 			"200": {
