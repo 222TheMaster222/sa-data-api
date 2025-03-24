@@ -31,7 +31,7 @@ export class ResourceList extends OpenAPIRoute {
 			getResources(context),
 			getMineItems(context),
 			getPlanets(context),
-			getSectorsByNumPlanets(1, context),
+			getSectorsByNumPlanets(1, context), // sectors returns a lot, so let's limit it the best we can :shrug:
 		]);
 
 		// If CPU performance is a problem, we could swap sectorName with planetName :shrug:
@@ -60,7 +60,7 @@ export class ResourceList extends OpenAPIRoute {
 			'Richness': scaleStat(x.resource.data.systemRichness, 2),
 		}));
 
-		const sortedResourceModels = resourceModels.sort((a, b) => a["Sector Name"].localeCompare(b["Sector Name"]))
+		const sortedResourceModels = resourceModels.sort((a, b) => a["Sector Name"].localeCompare(b["Sector Name"], undefined, { numeric: true, sensitivity: 'base' }))
 
 		const csv = Papa.unparse(sortedResourceModels)
 

@@ -34,7 +34,7 @@ export class SectorList extends OpenAPIRoute {
 			coordinates: sectorToString(src.data.coordinates),
 		}));
 
-		const sortedSectorModels = sectorModels.sort((a, b) => a.name.localeCompare(b.name))
+		const sortedSectorModels = sectorModels.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }))
 
 		const csv = Papa.unparse(sortedSectorModels)
 
