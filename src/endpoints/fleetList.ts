@@ -10,6 +10,11 @@ export class FleetList extends OpenAPIRoute {
 	schema = {
 		tags: ["Fleets"],
 		summary: "List Fleets",
+		request: {
+		  query: z.object({
+			playerProfile: z.string().min(32).max(44), // Solana pubkey
+		  }),
+		},
 		responses: {
 			"200": {
 				description: "Returns a list of fleets",
@@ -23,15 +28,15 @@ export class FleetList extends OpenAPIRoute {
 	};
 
 	async handle(c) {
+		const data = await this.getValidatedData<typeof this.schema>();
+		const playerProfile = new PublicKey(data.query.playerProfile);
 
 		const connection = new Connection(c.env.RPC_URL, { commitment: "confirmed" })
 		const context = createAppContext(connection)
 
-		const owner = new PublicKey('DRckeF77miyiTXTJzRJxP68XqoUK9Pb3j2SWrpsHC6cC')
-
 		const [ownedFleets, rentedFleets,] = await Promise.all([
-			getFleetsByOwnerProfile(owner, context),
-			getFleetsBySubProfile(owner, context)
+			getFleetsByOwnerProfile(playerProfile, context),
+			getFleetsBySubProfile(playerProfile, context)
 		])
 
 		const allFleets = [...ownedFleets, ...rentedFleets]
