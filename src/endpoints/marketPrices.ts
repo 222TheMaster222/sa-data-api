@@ -24,7 +24,7 @@ type OrderSummary = {
 
 const TARGET_MARKETS = [
 	{ name: 'Food', mint: 'MASS9GqtJz6ABisAxcUn3FeR4phMqH1XfG6LPKJePog' },
-	{ name: 'Ammunition', mint: 'AMMOxammoK8AkX2wnebQb35cDAZtTkvsXQbi82cGeTnUvvfKxx...' },
+	{ name: 'Ammunition', mint: 'ammoK8AkX2wnebQb35cDAZtTkvsXQbi82cGeTnUvvfK' },
 	{ name: 'Fuel', mint: 'fueL3hBZjLLLJHiFH9cqZoozTG3XQZ53diwFPwbzNim' },
 	{ name: 'Toolkit', mint: 'tooLsNYLiVqzg8o4m3L2Uetbn62mvMWRqkog6PQeYKL' },
 ];
