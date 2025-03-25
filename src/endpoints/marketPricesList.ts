@@ -52,13 +52,17 @@ export class MarketPricesList extends OpenAPIRoute {
 	schema = {
 		tags: ["Market Prices"],
 		summary: "List Market Prices",
-		query: z.object({
-			itemType: z.string().optional(),
-			class: z.string().optional(),
-			tier: z.string().optional(), // could parse to number later
-			rarity: z.string().optional(),
-			category: z.string().optional(),
-		}),
+		request: {
+			query: z.object({
+				currency: z.enum(['atlas', 'usd']),
+				itemType: z.string().optional(),
+				class: z.string().optional(),
+				tier: z.string().optional(), // could parse to number later
+				rarity: z.string().optional(),
+				category: z.string().optional(),
+			}),
+
+		},
 		responses: {
 			"200": {
 				description: "Returns a list of market prices",
@@ -72,12 +76,25 @@ export class MarketPricesList extends OpenAPIRoute {
 	};
 
 	async handle(c) {
-		const query = c.req.query();
-		const filterItemTypes = parseCsvParam(query.itemType);     // e.g. "resource" → ["resource"]
-		const filterClasses = parseCsvParam(query.class);        // e.g. "common,rare" → ["common", "rare"]
-		const filterTiers = parseCsvParam(query.tier);         // e.g. "1,2" → ["1", "2"]
-		const filterRarities = parseCsvParam(query.rarity);
-		const filterCategories = parseCsvParam(query.category);
+
+		const data = await this.getValidatedData<typeof this.schema>();
+		let currenyMint: PublicKey;
+		switch (data.query.currency) {
+			case 'usd':
+				currenyMint = USDC_MINT;
+				break;
+			case 'atlas':
+				currenyMint = ATLAS_MINT;
+				break;
+			default:
+				throw 'TODO'
+
+		}
+		const filterItemTypes = parseCsvParam(data.query.itemType);     // e.g. "resource" → ["resource"]
+		const filterClasses = parseCsvParam(data.query.class);        // e.g. "common,rare" → ["common", "rare"]
+		const filterTiers = parseCsvParam(data.query.tier);         // e.g. "1,2" → ["1", "2"]
+		const filterRarities = parseCsvParam(data.query.rarity);
+		const filterCategories = parseCsvParam(data.query.category);
 
 		const connection = new Connection(c.env.RPC_URL, { commitment: "confirmed" })
 
@@ -85,7 +102,7 @@ export class MarketPricesList extends OpenAPIRoute {
 
 		const orders = await clientService.getOpenOrdersForCurrency(
 			connection,
-			ATLAS_MINT,
+			currenyMint,
 			GALACTIC_MARKETPLACE_PROGRAM_ID,
 		);
 
