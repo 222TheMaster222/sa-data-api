@@ -6,6 +6,7 @@ import { ResourceList } from "endpoints/resourceList";
 import { SectorList } from "endpoints/sectorList";
 import { FleetList } from "endpoints/fleetList";
 import { TokenPriceList } from "endpoints/tokenPriceList";
+import { MarketPricesList } from "endpoints/marketPrices";
 
 // Start a Hono app
 const app = new Hono();
@@ -18,6 +19,7 @@ const openapi = fromHono(app, {
 // Register OpenAPI endpoints
 
 openapi.get("/api/fleets", FleetList);
+openapi.get("/api/market-prices", MarketPricesList);
 openapi.get("/api/mineitems", MineItemList);
 openapi.get("/api/sectors", SectorList);
 openapi.get("/api/ships", ShipList);
