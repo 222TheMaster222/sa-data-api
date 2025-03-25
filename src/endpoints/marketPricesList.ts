@@ -10,10 +10,10 @@ const GALACTIC_MARKETPLACE_PROGRAM_ID = new PublicKey('traderDnaR5w6Tcoi3NFm53i4
 
 type MarketPriceSummary = {
 	name: string
-	midpoint: number
-	sell: number
-	buy: number
-	spread: number
+	midpoint: number | null
+	sell: number | null
+	buy: number | null
+	spread: number | null
 	symbol: string
 	itemType: string
 	class: string
@@ -105,19 +105,19 @@ export class MarketPricesList extends OpenAPIRoute {
 		const marketPrices: MarketPriceSummary[] = [];
 
 		for (const { name, buyOrders, sellOrders, nft } of marketMap.values()) {
-			if (!buyOrders.length || !sellOrders.length) continue;
-
 			const bestBuy = buyOrders.sort((a, b) => b.price.sub(a.price).toNumber())[0];
 			const bestSell = sellOrders.sort((a, b) => a.price.sub(b.price).toNumber())[0];
 
-			const midpoint = (bestBuy.uiPrice + bestSell.uiPrice) / 2;
-			const spread = bestSell.uiPrice - bestBuy.uiPrice;
+			const buy = bestBuy?.uiPrice ?? null;
+			const sell = bestSell?.uiPrice ?? null;
+			const midpoint = buy !== null && sell !== null ? (buy + sell) / 2 : null;
+			const spread = buy !== null && sell !== null ? sell - buy : null;
 
 			marketPrices.push({
 				name,
 				midpoint,
-				sell: bestSell.uiPrice,
-				buy: bestBuy.uiPrice,
+				sell,
+				buy,
 				spread,
 				symbol: nft.symbol,
 				itemType: nft.attributes.itemType,

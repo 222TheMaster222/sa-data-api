@@ -6,7 +6,7 @@ import { ResourceList } from "endpoints/resourceList";
 import { SectorList } from "endpoints/sectorList";
 import { FleetList } from "endpoints/fleetList";
 import { TokenPriceList } from "endpoints/tokenPriceList";
-import { MarketPricesList } from "endpoints/marketPrices";
+import { MarketPricesList } from "endpoints/marketPricesList";
 
 // Start a Hono app
 const app = new Hono();
