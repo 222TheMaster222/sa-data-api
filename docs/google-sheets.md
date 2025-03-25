@@ -23,7 +23,6 @@ Use `IMPORTDATA` when the API returns CSV or TSV data.
 |-------------------|---------------------------------------------------------------|
 | Ships Metadata    | `https://your-api-url.com/api/ships.csv`                       |
 | Fleet Info        | `https://your-api-url.com/api/fleets.csv?owner=YOUR_PLAYER_PROFILE`   |
-| Market Prices     | `https://your-api-url.com/api/market.csv?currency=atlas`        |
 | Mining Richness   | `https://your-api-url.com/api/resources.csv`     |
 
 ---
@@ -32,9 +31,3 @@ Use `IMPORTDATA` when the API returns CSV or TSV data.
 
 - Always use HTTPS endpoints
 - Consider using Sheets triggers for scheduled updates (e.g. every hour)
-
----
-
-## 💬 Need Help?
-
-Join us on [Discord](https://discord.gg/your-invite) to get help or share your sheet with others!
