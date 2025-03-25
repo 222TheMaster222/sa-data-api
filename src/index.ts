@@ -20,7 +20,7 @@ const openapi = fromHono(app, {
 
 openapi.get("/api/fleets", FleetList);
 openapi.get("/api/market-prices", MarketPricesList);
-openapi.get("/api/mineitems", MineItemList);
+openapi.get("/api/mine-items", MineItemList);
 openapi.get("/api/sectors", SectorList);
 openapi.get("/api/ships", ShipList);
 openapi.get("/api/token-prices", TokenPriceList);
