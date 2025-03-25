@@ -37,6 +37,8 @@ export class TokenPriceList extends OpenAPIRoute {
             headers: { accept: "application/json" }
         });
 
+        console.log('coingecko response', res.statusText)
+
         const rows = [["Token", "Price (USD)"]];
 
         if (res.ok) {
