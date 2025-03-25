@@ -60,7 +60,14 @@ export class ResourceList extends OpenAPIRoute {
 			'Richness': scaleStat(x.resource.data.systemRichness, 2),
 		}));
 
-		const sortedResourceModels = resourceModels.sort((a, b) => a["Sector Name"].localeCompare(b["Sector Name"], undefined, { numeric: true, sensitivity: 'base' }))
+		const sortedResourceModels = resourceModels.sort((a, b) => {
+			const nameCompare = a["Sector Name"].localeCompare(b["Sector Name"], undefined, { numeric: true, sensitivity: 'base' });
+			if (nameCompare != 0) {
+				return nameCompare;
+			}
+
+			return a.Name.localeCompare(b.Name)
+		})
 
 		const csv = Papa.unparse(sortedResourceModels)
 
