@@ -58,7 +58,8 @@ export class ResourceList extends OpenAPIRoute {
 			'Name': byteArrayToString(x.mineItem.data.name),
 			'Hardness': scaleStat(x.mineItem.data.resourceHardness, 2),
 			'Richness': scaleStat(x.resource.data.systemRichness, 2),
-		}));
+		}))
+			.filter(x => x.Richness > 0);
 
 		const sortedResourceModels = resourceModels.sort((a, b) => {
 			const nameCompare = a["Sector Name"].localeCompare(b["Sector Name"], undefined, { numeric: true, sensitivity: 'base' });
