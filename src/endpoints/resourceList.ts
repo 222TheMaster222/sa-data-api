@@ -1,6 +1,6 @@
 import { OpenAPIRoute } from "chanfana";
 import { z } from "zod";
-import { createAppContext, getMineItems, getPlanets, getResources, getSectors } from "sage";
+import { createAppContext, getMineItems, getPlanets, getResources, getSectorsByNumPlanets } from "sage";
 import { Connection } from "@solana/web3.js";
 import { byteArrayToString } from "@staratlas/data-source";
 import { scaleStat, sectorToString } from './utils'
@@ -31,7 +31,7 @@ export class ResourceList extends OpenAPIRoute {
 			getResources(context),
 			getMineItems(context),
 			getPlanets(context),
-			getSectors(context),
+			getSectorsByNumPlanets(1, context), // sectors returns a lot, so let's limit it the best we can :shrug:
 		]);
 
 		// If CPU performance is a problem, we could swap sectorName with planetName :shrug:
@@ -54,13 +54,13 @@ export class ResourceList extends OpenAPIRoute {
 		})
 
 		const resourceModels = blobs.map(x => ({
-			sectorName: byteArrayToString(x.sector.data.name),
-			name: byteArrayToString(x.mineItem.data.name),
-			hardness: scaleStat(x.mineItem.data.resourceHardness, 2),
-			systemRichness: scaleStat(x.resource.data.systemRichness, 2),
+			'Sector Name': byteArrayToString(x.sector.data.name),
+			'Name': byteArrayToString(x.mineItem.data.name),
+			'Hardness': scaleStat(x.mineItem.data.resourceHardness, 2),
+			'Richness': scaleStat(x.resource.data.systemRichness, 2),
 		}));
 
-		const sortedResourceModels = resourceModels.sort((a, b) => a.sectorName.localeCompare(b.sectorName))
+		const sortedResourceModels = resourceModels.sort((a, b) => a["Sector Name"].localeCompare(b["Sector Name"], undefined, { numeric: true, sensitivity: 'base' }))
 
 		const csv = Papa.unparse(sortedResourceModels)
 

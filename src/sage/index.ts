@@ -1,4 +1,5 @@
 export * from './appContext'
+export * from './fleet'
 export * from './mineItem'
 export * from './planet'
 export * from './resource'
