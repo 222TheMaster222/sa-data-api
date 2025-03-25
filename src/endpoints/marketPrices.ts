@@ -1,10 +1,33 @@
 import { OpenAPIRoute } from "chanfana";
 import { z } from "zod";
-import { createAppContext } from "sage";
-import { Connection } from "@solana/web3.js";
-import { Ship, ShipStats } from "@staratlas/sage";
-import { byteArrayToString } from "@staratlas/data-source";
-import { scaleStat } from "./utils";
+import { Connection, PublicKey } from "@solana/web3.js";
+import { GmClientService, Order, OrderSide } from "@staratlas/factory";
+
+const USDC_MINT = new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v');
+const ATLAS_MINT = new PublicKey('ATLASXmbPQxBUYbxPsV97usA3fPQYEqzQBUHgiFCUsXx');
+const GALACTIC_MARKETPLACE_PROGRAM_ID = new PublicKey('traderDnaR5w6Tcoi3NFm53i48FTDNbGjBSZwWXDRrg');
+
+type MarketPriceSummary = {
+	name: string
+	midpoint: number
+	sell: number
+	buy: number
+	spread: number
+}
+
+type OrderSummary = {
+	name: string;
+	mint: string;
+	buyOrders: Order[];
+	sellOrders: Order[];
+};
+
+const TARGET_MARKETS = [
+	{ name: 'Food', mint: 'MASS9GqtJz6ABisAxcUn3FeR4phMqH1XfG6LPKJePog' },
+	{ name: 'Ammunition', mint: 'AMMOxammoK8AkX2wnebQb35cDAZtTkvsXQbi82cGeTnUvvfKxx...' },
+	{ name: 'Fuel', mint: 'fueL3hBZjLLLJHiFH9cqZoozTG3XQZ53diwFPwbzNim' },
+	{ name: 'Toolkit', mint: 'tooLsNYLiVqzg8o4m3L2Uetbn62mvMWRqkog6PQeYKL' },
+];
 
 export class MarketPricesList extends OpenAPIRoute {
 	schema = {
@@ -12,7 +35,7 @@ export class MarketPricesList extends OpenAPIRoute {
 		summary: "List Market Prices",
 		responses: {
 			"200": {
-				description: "Returns a list of market prices ",
+				description: "Returns a list of market prices",
 				content: {
 					"text/csv": {
 						schema: z.string(),
@@ -25,30 +48,49 @@ export class MarketPricesList extends OpenAPIRoute {
 	async handle(c) {
 
 		const connection = new Connection(c.env.RPC_URL, { commitment: "confirmed" })
-		const context = createAppContext(connection)
 
-		/*
-		const allShips = await getShips(context);
+		const clientService = new GmClientService();
 
-		const latestShips = allShips.filter(s => s.data.next.key.equals(new PublicKey('11111111111111111111111111111111')))
+		const orders = await clientService.getOpenOrdersForCurrency(connection, ATLAS_MINT, GALACTIC_MARKETPLACE_PROGRAM_ID);
 
-		// Sort: first by sizeClass, then by name
-		const sortedShips = Array.from(latestShips).sort((a, b) => {
-			const sizeA = a.data.sizeClass;
-			const sizeB = b.data.sizeClass;
+		const marketMap = new Map<string, OrderSummary>();
 
-			// Sort numerically by sizeClass first
-			if (sizeA !== sizeB) {
-				return sizeA - sizeB;
+		for (const { name, mint } of TARGET_MARKETS) {
+			marketMap.set(mint, { name, mint, buyOrders: [], sellOrders: [] });
+		}
+
+		for (const order of orders) {
+			const market = marketMap.get(order.orderMint);
+			if (!market) continue;
+
+			if (order.orderType === OrderSide.Buy) {
+				market.buyOrders.push(order);
+			} else if (order.orderType === OrderSide.Sell) {
+				market.sellOrders.push(order);
 			}
+		}
 
-			const nameA = byteArrayToString(a.data.name).toLowerCase();
-			const nameB = byteArrayToString(b.data.name).toLowerCase();
-			return nameA.localeCompare(nameB);
-		});
-	*/
+		const marketPrices: MarketPriceSummary[] = [];
 
-		const csv = shipsToCsv([]);
+		for (const { name, buyOrders, sellOrders } of marketMap.values()) {
+			if (!buyOrders.length || !sellOrders.length) continue;
+
+			const bestBuy = buyOrders.sort((a, b) => b.price.sub(a.price).toNumber())[0];
+			const bestSell = sellOrders.sort((a, b) => a.price.sub(b.price).toNumber())[0];
+
+			const midpoint = (bestBuy.uiPrice + bestSell.uiPrice) / 2;
+			const spread = bestSell.uiPrice - bestBuy.uiPrice;
+
+			marketPrices.push({
+				name,
+				midpoint,
+				sell: bestSell.uiPrice,
+				buy: bestBuy.uiPrice,
+				spread,
+			});
+		}
+
+		const csv = marketPricesToCsv(marketPrices);
 
 		return new Response(csv, {
 			headers: {
@@ -59,37 +101,20 @@ export class MarketPricesList extends OpenAPIRoute {
 	}
 }
 
-function shipsToCsv(ships: Ship[]): string {
+function marketPricesToCsv(marketPrices: MarketPriceSummary[]): string {
 
 	// Step 3: Convert to CSV rows
 	const rows = [
 		[
-			'Name', 'Price (ATLAS)'
+			'Name', 'Price (Midpoint)', 'Price (Sell)', 'Price (Buy)', 'Spread'
 		], // CSV header
-		...ships.map((ship) => {
-			const { cargoStats, miscStats, movementStats } = ship.data.stats as ShipStats;
+		...marketPrices.map(mp => {
 			return [
-				byteArrayToString(ship.data.name),
-				ship.data.sizeClass,
-				cargoStats.cargoCapacity,
-				cargoStats.fuelCapacity,
-				cargoStats.ammoCapacity,
-				scaleStat(cargoStats.foodConsumptionRate, 4),
-				scaleStat(cargoStats.ammoConsumptionRate, 4),
-				scaleStat(cargoStats.miningRate, 4),
-				scaleStat(movementStats.subwarpSpeed, 6),
-				scaleStat(movementStats.warpSpeed, 6),
-				scaleStat(movementStats.maxWarpDistance, 2),
-				movementStats.warpCoolDown,
-				scaleStat(movementStats.warpFuelConsumptionRate, 2),
-				scaleStat(movementStats.subwarpFuelConsumptionRate, 2),
-				movementStats.planetExitFuelAmount,
-				miscStats.scanCoolDown,
-				miscStats.requiredCrew,
-				miscStats.respawnTime,
-				miscStats.scanCost,
-				miscStats.sduPerScan,
-				miscStats.passengerCapacity,
+				mp.name,
+				mp.midpoint,
+				mp.sell,
+				mp.buy,
+				mp.spread,
 			]
 		}),
 	];
