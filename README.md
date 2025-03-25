@@ -61,18 +61,4 @@ You can use the API directly in Google Sheets via `IMPORTDATA`.
 
 ## 📘 Documentation
 
-- [API Reference (OpenAPI)](https://your-api-url.com/docs)
 - [Google Sheets Integration Guide](docs/google-sheets.md)
-- [Changelog](CHANGELOG.md)
-
----
-
-## 🤝 Community & Support
-
-Built by and for the **Star Atlas community**. Join us on [Discord](https://discord.gg/your-invite) to get support, share feedback, and help shape the roadmap.
-
----
-
-## 📜 License
-
-MIT License — open for community contributions.
