@@ -52,6 +52,13 @@ export class MarketPricesList extends OpenAPIRoute {
 	schema = {
 		tags: ["Market Prices"],
 		summary: "List Market Prices",
+		query: z.object({
+			itemType: z.string().optional(),
+			class: z.string().optional(),
+			tier: z.string().optional(), // could parse to number later
+			rarity: z.string().optional(),
+			category: z.string().optional(),
+		}),
 		responses: {
 			"200": {
 				description: "Returns a list of market prices",
@@ -65,6 +72,12 @@ export class MarketPricesList extends OpenAPIRoute {
 	};
 
 	async handle(c) {
+		const query = c.req.query();
+		const filterItemTypes = parseCsvParam(query.itemType);     // e.g. "resource" → ["resource"]
+		const filterClasses = parseCsvParam(query.class);        // e.g. "common,rare" → ["common", "rare"]
+		const filterTiers = parseCsvParam(query.tier);         // e.g. "1,2" → ["1", "2"]
+		const filterRarities = parseCsvParam(query.rarity);
+		const filterCategories = parseCsvParam(query.category);
 
 		const connection = new Connection(c.env.RPC_URL, { commitment: "confirmed" })
 
@@ -105,8 +118,8 @@ export class MarketPricesList extends OpenAPIRoute {
 		const marketPrices: MarketPriceSummary[] = [];
 
 		for (const { name, buyOrders, sellOrders, nft } of marketMap.values()) {
-			const bestBuy = buyOrders.sort((a, b) => b.price.sub(a.price).toNumber())[0];
-			const bestSell = sellOrders.sort((a, b) => a.price.sub(b.price).toNumber())[0];
+			const bestBuy: Order | undefined = buyOrders.sort((a, b) => b.price.sub(a.price).toNumber())[0];
+			const bestSell: Order | undefined = sellOrders.sort((a, b) => a.price.sub(b.price).toNumber())[0];
 
 			const buy = bestBuy?.uiPrice ?? null;
 			const sell = bestSell?.uiPrice ?? null;
@@ -128,7 +141,16 @@ export class MarketPricesList extends OpenAPIRoute {
 			});
 		}
 
-		const csv = marketPricesToCsv(marketPrices.sort((a, b) => a.name.localeCompare(b.name)));
+		const filtered = marketPrices.filter(p => {
+			if (filterItemTypes && !filterItemTypes.includes(p.itemType)) return false;
+			if (filterClasses && !filterClasses.includes(p.class)) return false;
+			if (filterTiers && !filterTiers.includes(String(p.tier))) return false;
+			if (filterRarities && !filterRarities.includes(p.rarity)) return false;
+			if (filterCategories && !filterCategories.includes(p.category ?? '')) return false;
+			return true;
+		});
+
+		const csv = marketPricesToCsv(filtered.sort((a, b) => a.name.localeCompare(b.name)));
 
 		return new Response(csv, {
 			headers: {
@@ -165,4 +187,9 @@ function marketPricesToCsv(marketPrices: MarketPriceSummary[]): string {
 	];
 
 	return rows.map(row => row.join(',')).join('\n');
+}
+
+function parseCsvParam(value?: string): string[] | undefined {
+	if (!value) return undefined;
+	return value.split(',').map(s => s.trim()).filter(Boolean);
 }
