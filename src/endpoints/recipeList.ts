@@ -7,11 +7,19 @@ import { getRecipeCategories, getRecipes } from "crafting";
 import { RecipeStatus } from "@staratlas/crafting";
 import { scaleStat } from "./utils";
 import { Recipe } from "types";
+import { z } from "zod";
 
 export class RecipeList extends OpenAPIRoute {
 	schema = {
 		tags: ["Recipes"],
 		summary: "List Recipes",
+		request: {
+			query: z.object({
+				category: z.string().optional(),
+				status: z.string().optional().default(RecipeStatus[RecipeStatus.Active]),
+			}),
+
+		},
 		responses: {
 			"200": {
 				description: "Returns a list of recipes",
@@ -26,36 +34,61 @@ export class RecipeList extends OpenAPIRoute {
 
 	async handle(c) {
 
+		const data = await this.getValidatedData<typeof this.schema>();
+
+		const filterCategory = parseCsvParam(data.query.category);
+		const filterStatus = parseCsvParam(data.query.status);
+
+
 		const connection = new Connection(c.env.RPC_URL, { commitment: "confirmed" })
 		const context = createAppContext(connection)
 
-		const allRecipes = (await getRecipes(context))
-			.filter(r => r.data.status === RecipeStatus.Active)
+		const [recipes, categories] = await Promise.all([
+			getRecipes(context),
+			getRecipeCategories(context),
+		])
+
+		const mapReducedRecipes = recipes
+			.map(r => ({
+				data: {
+					...r.data,
+					namespace: byteArrayToString(r.data.namespace),
+				},
+				key: r.key,
+				category: categories.find(c => c.key.equals(r.data.category))
+			}))
+			.filter(r => {
+				if (filterCategory && !filterCategory.includes(byteArrayToString(r.category.data.namespace))) return false;
+				if (filterStatus && !filterStatus.includes(RecipeStatus[r.data.status])) return false;
+				return true;
+			})
 			.sort((a, b) => {
 
-				const namespaceCompare = byteArrayToString(a.data.namespace).localeCompare(byteArrayToString(b.data.namespace))
-
-				if (namespaceCompare !== 0) {
-					return namespaceCompare
+				if (byteArrayToString(a.category.data.namespace) !== byteArrayToString(b.category.data.namespace)) {
+					return byteArrayToString(a.category.data.namespace).localeCompare(byteArrayToString(b.category.data.namespace));
 				}
 
-				return a.data.version - b.data.version
-			});
+				if (a.data.namespace !== b.data.namespace) {
+					return a.data.namespace.localeCompare(b.data.namespace);
+				}
 
-		const categories = await getRecipeCategories(context);
+				return a.key.toBase58().localeCompare(b.key.toBase58());
+			})
 
-		const resourceModels = allRecipes.map(r => ({
-			'Namespace': byteArrayToString(r.data.namespace),
+		const resourceModels = mapReducedRecipes.map(r => ({
+			'Category': byteArrayToString(r.category.data.namespace),
+			'Namespace': r.data.namespace,
 			'Duration': r.data.duration.toString(),
 			'Min Duration': r.data.minDuration.toString(),
-			'Fee Amount': scaleStat(r.data.feeAmount.toNumber(), 8).toString(),
 			'Status': RecipeStatus[r.data.status],
-			'Total Count': r.data.totalCount,
+			'Fee Amount': scaleStat(r.data.feeAmount.toNumber(), 8).toString(),
 			'Usage Count': r.data.usageCount.toString(),
 			'Usage Limit': r.data.usageLimit.toString(),
 			'Value': r.data.value.toString(),
-			'Version': r.data.version,
-			'Category': byteArrayToString(categories.find(c => c.key.equals(r.data.category))?.data.namespace ?? []),
+			'Consumables Count': r.data.consumablesCount.toString(),
+			'Non Consumables Count': r.data.nonConsumablesCount.toString(),
+			'Outputs Count': r.data.outputsCount.toString(),
+			'Total Count': r.data.totalCount,
 		}))
 
 		const csv = Papa.unparse(resourceModels)
@@ -67,4 +100,9 @@ export class RecipeList extends OpenAPIRoute {
 			},
 		});
 	}
+}
+
+function parseCsvParam(value?: string): string[] | undefined {
+	if (!value) return undefined;
+	return value.split(',').map(s => s.trim()).filter(Boolean);
 }

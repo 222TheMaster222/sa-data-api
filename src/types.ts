@@ -1,4 +1,4 @@
-import { RecipeStatus } from "@staratlas/crafting";
+import { RecipeStatus, CRAFTING_IDL } from "@staratlas/crafting";
 import { DateTime, Num, Str } from "chanfana";
 import { z } from "zod";
 
@@ -10,48 +10,59 @@ export const Task = z.object({
 	due_date: DateTime(),
 });
 
+
+const recipeAccount = CRAFTING_IDL.accounts.find(a => a.name === 'recipe');
+const recipeFieldsMap: Record<string, string> = recipeAccount.type.fields.reduce((acc, field) => {
+	acc[field.name] = field.docs[0] || "";
+	return acc;
+}, {} as Record<string, string>);
+
+const recipeStatusValues = CRAFTING_IDL.types
+	.find(t => t.name === 'RecipeStatus')
+	.type.variants.map(v => v.name);
+
 export const Recipe = z.object({
 	namespace: Str({
 		example: "Toolkit 1",
-		description: "The name of this recipe (stored as a 32-byte array)."
+		description: recipeFieldsMap['namespace'],
 	}),
 	duration: Num({
 		example: 4,
-		description: "The time required to craft this Recipe (in seconds)."
+		description: recipeFieldsMap['duration'],
 	}),
 	minDuration: Num({
 		example: 1,
-		description: "The minimum time required to craft this Recipe (in seconds)."
+		description: recipeFieldsMap['minDuration'],
 	}),
 	feeAmount: Num({
 		example: 0.00014462,
-		description: "The amount to charge when this recipe is used."
+		description: recipeFieldsMap['feeAmount'],
 	}),
-	status: z.nativeEnum(RecipeStatus, {
-		description: "The status of the recipe. Valid values are: Initializing, Active, and Deactivated."
+	status: z.enum(recipeStatusValues as [string, ...string[]], {
+		description: recipeFieldsMap['status'],
 	}),
 	totalCount: Num({
 		example: 2,
-		description: "The total count of all inputs and outputs in this recipe."
+		description: recipeFieldsMap['totalCount'],
 	}),
 	usageCount: Num({
 		example: 13555749315,
-		description: "The number of times this recipe has been used."
+		description: recipeFieldsMap['usageCount'],
 	}),
 	usageLimit: Num({
 		example: 18446744073709551615,
-		description: "The maximum number of times this recipe can be used."
+		description: recipeFieldsMap['usageLimit'],
 	}),
 	value: Num({
 		example: 140000,
-		description: "The economic value of this recipe, as determined by the creator."
+		description: recipeFieldsMap['value'],
 	}),
 	version: Num({
 		example: 0,
-		description: "The data version of this recipe account."
+		description: recipeFieldsMap['version'],
 	}),
 	category: Str({
 		example: "Tier 2",
-		description: "The Recipe Category (typically represented by the category's namespace)."
+		description: recipeFieldsMap['category'],
 	}),
 });
