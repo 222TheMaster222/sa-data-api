@@ -1,10 +1,11 @@
 import { OpenAPIRoute } from "chanfana";
 import { z } from "zod";
-import { createAppContext, getMineItems, getPlanets, getResources, getSectorsByNumPlanets } from "sage";
+import { createAppContext } from "sage";
 import { Connection } from "@solana/web3.js";
 import { byteArrayToString } from "@staratlas/data-source";
-import { scaleStat, sectorToString } from './utils'
 import Papa from 'papaparse';
+import { getRecipeCategories, getRecipes } from "crafting";
+import { RecipeStatus } from "@staratlas/crafting";
 
 export class RecipeList extends OpenAPIRoute {
 	schema = {
@@ -27,50 +28,36 @@ export class RecipeList extends OpenAPIRoute {
 		const connection = new Connection(c.env.RPC_URL, { commitment: "confirmed" })
 		const context = createAppContext(connection)
 
-		const [allResources, allMineItems, allPlanets, allSectors] = await Promise.all([
-			getResources(context),
-			getMineItems(context),
-			getPlanets(context),
-			getSectorsByNumPlanets(1, context), // sectors returns a lot, so let's limit it the best we can :shrug:
-		]);
+		const allRecipes = (await getRecipes(context))
+			.filter(r => r.data.status === RecipeStatus.Active)
+			.sort((a, b) => {
 
-		// If CPU performance is a problem, we could swap sectorName with planetName :shrug:
-		const mineItemMap = new Map(allMineItems.map(mi => [mi.key.toBase58(), mi]));
-		const planetMap = new Map(allPlanets.map(p => [p.key.toBase58(), p]));
-		const sectorByCoord = new Map(
-			allSectors.map(s => [sectorToString(s.data.coordinates), s])
-		);
+				const namespaceCompare = byteArrayToString(a.data.namespace).localeCompare(byteArrayToString(b.data.namespace))
 
-		const blobs = allResources.map(resource => {
-			const mineItem = mineItemMap.get(resource.data.mineItem.toBase58());
-			const planet = planetMap.get(resource.data.location.toBase58());
-			const sector = sectorByCoord.get(sectorToString(planet.data.sector));
+				if (namespaceCompare !== 0) {
+					return namespaceCompare
+				}
 
-			return {
-				resource,
-				mineItem,
-				sector,
-			}
-		})
+				return a.data.version - b.data.version
+			});
 
-		const resourceModels = blobs.map(x => ({
-			'Sector Name': byteArrayToString(x.sector.data.name),
-			'Name': byteArrayToString(x.mineItem.data.name),
-			'Hardness': scaleStat(x.mineItem.data.resourceHardness, 2),
-			'Richness': scaleStat(x.resource.data.systemRichness, 2),
+		const categories = await getRecipeCategories(context);
+
+		const resourceModels = allRecipes.map(r => ({
+			'Namespace': byteArrayToString(r.data.namespace),
+			'Duration': r.data.duration.toString(),
+			'Min Duration': r.data.minDuration.toString(),
+			'Fee Amount': r.data.feeAmount.toString(),
+			'Status': RecipeStatus[r.data.status],
+			'Total Count': r.data.totalCount,
+			'Usage Count': r.data.usageCount.toString(),
+			'Usage Limit': r.data.usageLimit.toString(),
+			'Value': r.data.value.toString(),
+			'Verion': r.data.version,
+			'Category': byteArrayToString(categories.find(c => c.key.equals(r.data.category))?.data.namespace ?? []),
 		}))
-			.filter(x => x.Richness > 0);
 
-		const sortedResourceModels = resourceModels.sort((a, b) => {
-			const nameCompare = a["Sector Name"].localeCompare(b["Sector Name"], undefined, { numeric: true, sensitivity: 'base' });
-			if (nameCompare != 0) {
-				return nameCompare;
-			}
-
-			return a.Name.localeCompare(b.Name)
-		})
-
-		const csv = Papa.unparse(sortedResourceModels)
+		const csv = Papa.unparse(resourceModels)
 
 		return new Response(csv, {
 			headers: {
