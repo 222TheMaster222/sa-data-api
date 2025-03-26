@@ -6,6 +6,7 @@ import { byteArrayToString } from "@staratlas/data-source";
 import Papa from 'papaparse';
 import { getRecipeCategories, getRecipes } from "crafting";
 import { RecipeStatus } from "@staratlas/crafting";
+import { scaleStat } from "./utils";
 
 export class RecipeList extends OpenAPIRoute {
 	schema = {
@@ -47,7 +48,7 @@ export class RecipeList extends OpenAPIRoute {
 			'Namespace': byteArrayToString(r.data.namespace),
 			'Duration': r.data.duration.toString(),
 			'Min Duration': r.data.minDuration.toString(),
-			'Fee Amount': r.data.feeAmount.toString(),
+			'Fee Amount': scaleStat(r.data.feeAmount.toNumber(), 8).toString(),
 			'Status': RecipeStatus[r.data.status],
 			'Total Count': r.data.totalCount,
 			'Usage Count': r.data.usageCount.toString(),
