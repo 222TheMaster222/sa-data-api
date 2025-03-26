@@ -13,7 +13,7 @@ type TokenPrice = {
 
 export class TokenPriceList extends OpenAPIRoute {
     schema = {
-        tags: ["Prices"],
+        tags: ["Token Prices"],
         summary: "Returns live token prices in CSV format",
         responses: {
             "200": {
