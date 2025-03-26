@@ -53,7 +53,7 @@ export class RecipeList extends OpenAPIRoute {
 			'Usage Count': r.data.usageCount.toString(),
 			'Usage Limit': r.data.usageLimit.toString(),
 			'Value': r.data.value.toString(),
-			'Verion': r.data.version,
+			'Version': r.data.version,
 			'Category': byteArrayToString(categories.find(c => c.key.equals(r.data.category))?.data.namespace ?? []),
 		}))
 
