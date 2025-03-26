@@ -1,5 +1,4 @@
 import { OpenAPIRoute } from "chanfana";
-import { z } from "zod";
 import { createAppContext } from "sage";
 import { Connection } from "@solana/web3.js";
 import { byteArrayToString } from "@staratlas/data-source";
@@ -7,6 +6,7 @@ import Papa from 'papaparse';
 import { getRecipeCategories, getRecipes } from "crafting";
 import { RecipeStatus } from "@staratlas/crafting";
 import { scaleStat } from "./utils";
+import { Recipe } from "types";
 
 export class RecipeList extends OpenAPIRoute {
 	schema = {
@@ -17,7 +17,7 @@ export class RecipeList extends OpenAPIRoute {
 				description: "Returns a list of recipes",
 				content: {
 					"text/csv": {
-						schema: z.string(),
+						schema: Recipe.array()
 					},
 				},
 			},
