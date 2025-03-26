@@ -22,6 +22,10 @@ const recipeStatusValues = CRAFTING_IDL.types
 	.type.variants.map(v => v.name);
 
 export const Recipe = z.object({
+	category: Str({
+		example: "Tier 2",
+		description: recipeFieldsMap['category'],
+	}),
 	namespace: Str({
 		example: "Toolkit 1",
 		description: recipeFieldsMap['namespace'],
@@ -34,16 +38,12 @@ export const Recipe = z.object({
 		example: 1,
 		description: recipeFieldsMap['minDuration'],
 	}),
-	feeAmount: Num({
-		example: 0.00014462,
-		description: recipeFieldsMap['feeAmount'],
-	}),
 	status: z.enum(recipeStatusValues as [string, ...string[]], {
 		description: recipeFieldsMap['status'],
 	}),
-	totalCount: Num({
-		example: 2,
-		description: recipeFieldsMap['totalCount'],
+	feeAmount: Num({
+		example: 0.00014462,
+		description: recipeFieldsMap['feeAmount'],
 	}),
 	usageCount: Num({
 		example: 13555749315,
@@ -57,12 +57,20 @@ export const Recipe = z.object({
 		example: 140000,
 		description: recipeFieldsMap['value'],
 	}),
-	version: Num({
-		example: 0,
-		description: recipeFieldsMap['version'],
+	consumablesCount: Num({
+		example: 2,
+		description: recipeFieldsMap['consumablesCount'],
 	}),
-	category: Str({
-		example: "Tier 2",
-		description: recipeFieldsMap['category'],
+	nonConsumablesCount: Num({
+		example: 2,
+		description: recipeFieldsMap['nonConsumablesCount'],
+	}),
+	outputsCount: Num({
+		example: 2,
+		description: recipeFieldsMap['outputsCount'],
+	}),
+	totalCount: Num({
+		example: 2,
+		description: recipeFieldsMap['totalCount'],
 	}),
 });
