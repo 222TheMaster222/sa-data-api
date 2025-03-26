@@ -49,45 +49,58 @@ export class RecipeList extends OpenAPIRoute {
 		])
 
 		const mapReducedRecipes = recipes
-			.map(r => ({
-				data: {
-					...r.data,
-					namespace: byteArrayToString(r.data.namespace),
-				},
-				key: r.key,
-				category: categories.find(c => c.key.equals(r.data.category))
-			}))
+			.map(r => {
+				const c = categories.find(c => c.key.equals(r.data.category));
+
+				return {
+					key: r.key,
+					data: {
+						...r.data,
+						namespace: byteArrayToString(r.data.namespace),
+						status: RecipeStatus[r.data.status],
+					},
+					category: {
+						key: c.key,
+						data: {
+							...c.data,
+							namespace: byteArrayToString(c.data.namespace),
+						},
+					}
+				}
+			})
 			.filter(r => {
-				if (filterCategory && !filterCategory.includes(byteArrayToString(r.category.data.namespace))) return false;
-				if (filterStatus && !filterStatus.includes(RecipeStatus[r.data.status])) return false;
+				if (filterCategory && !filterCategory.includes(r.category.data.namespace)) return false;
+				if (filterStatus && !filterStatus.includes(r.data.status)) return false;
 				return true;
 			})
 			.sort((a, b) => {
 
-				if (byteArrayToString(a.category.data.namespace) !== byteArrayToString(b.category.data.namespace)) {
-					return byteArrayToString(a.category.data.namespace).localeCompare(byteArrayToString(b.category.data.namespace));
+				const categoryNamespaceCompare = a.category.data.namespace.localeCompare(b.category.data.namespace);
+				if (categoryNamespaceCompare !== 0) {
+					return categoryNamespaceCompare;
 				}
 
-				if (a.data.namespace !== b.data.namespace) {
-					return a.data.namespace.localeCompare(b.data.namespace);
+				const recipeNamespaceCompare = a.data.namespace.localeCompare(b.data.namespace);
+				if (recipeNamespaceCompare !== 0) {
+					return recipeNamespaceCompare;
 				}
 
 				return a.key.toBase58().localeCompare(b.key.toBase58());
 			})
 
 		const resourceModels = mapReducedRecipes.map(r => ({
-			'Category': byteArrayToString(r.category.data.namespace),
+			'Category': r.category.data.namespace,
 			'Namespace': r.data.namespace,
 			'Duration': r.data.duration.toString(),
 			'Min Duration': r.data.minDuration.toString(),
-			'Status': RecipeStatus[r.data.status],
+			'Status': r.data.status,
 			'Fee Amount': scaleStat(r.data.feeAmount.toNumber(), 8).toString(),
 			'Usage Count': r.data.usageCount.toString(),
 			'Usage Limit': r.data.usageLimit.toString(),
 			'Value': r.data.value.toString(),
-			'Consumables Count': r.data.consumablesCount.toString(),
-			'Non Consumables Count': r.data.nonConsumablesCount.toString(),
-			'Outputs Count': r.data.outputsCount.toString(),
+			'Consumables Count': r.data.consumablesCount,
+			'Non Consumables Count': r.data.nonConsumablesCount,
+			'Outputs Count': r.data.outputsCount,
 			'Total Count': r.data.totalCount,
 		}))
 
