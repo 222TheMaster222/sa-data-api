@@ -1,4 +1,5 @@
-import { DateTime, Str } from "chanfana";
+import { CRAFTING_IDL } from "@staratlas/crafting";
+import { DateTime, Num, Str } from "chanfana";
 import { z } from "zod";
 
 export const Task = z.object({
@@ -7,4 +8,69 @@ export const Task = z.object({
 	description: Str({ required: false }),
 	completed: z.boolean().default(false),
 	due_date: DateTime(),
+});
+
+
+const recipeAccount = CRAFTING_IDL.accounts.find(a => a.name === 'recipe');
+const recipeFieldsMap: Record<string, string> = recipeAccount.type.fields.reduce((acc, field) => {
+	acc[field.name] = field.docs[0] || "";
+	return acc;
+}, {} as Record<string, string>);
+
+const recipeStatusValues = CRAFTING_IDL.types
+	.find(t => t.name === 'RecipeStatus')
+	.type.variants.map(v => v.name);
+
+export const Recipe = z.object({
+	category: Str({
+		example: "Tier 2",
+		description: recipeFieldsMap['category'],
+	}),
+	namespace: Str({
+		example: "Toolkit 1",
+		description: recipeFieldsMap['namespace'],
+	}),
+	duration: Num({
+		example: 4,
+		description: recipeFieldsMap['duration'],
+	}),
+	minDuration: Num({
+		example: 1,
+		description: recipeFieldsMap['minDuration'],
+	}),
+	status: z.enum(recipeStatusValues as [string, ...string[]], {
+		description: recipeFieldsMap['status'],
+	}),
+	feeAmount: Num({
+		example: 0.00014462,
+		description: recipeFieldsMap['feeAmount'],
+	}),
+	usageCount: Num({
+		example: 13555749315,
+		description: recipeFieldsMap['usageCount'],
+	}),
+	usageLimit: Num({
+		example: 18446744073709551615,
+		description: recipeFieldsMap['usageLimit'],
+	}),
+	value: Num({
+		example: 140000,
+		description: recipeFieldsMap['value'],
+	}),
+	consumablesCount: Num({
+		example: 1,
+		description: recipeFieldsMap['consumablesCount'],
+	}),
+	nonConsumablesCount: Num({
+		example: 0,
+		description: recipeFieldsMap['nonConsumablesCount'],
+	}),
+	outputsCount: Num({
+		example: 1,
+		description: recipeFieldsMap['outputsCount'],
+	}),
+	totalCount: Num({
+		example: 2,
+		description: recipeFieldsMap['totalCount'],
+	}),
 });
