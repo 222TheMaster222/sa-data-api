@@ -1,4 +1,4 @@
-import { RecipeStatus, CRAFTING_IDL } from "@staratlas/crafting";
+import { CRAFTING_IDL } from "@staratlas/crafting";
 import { DateTime, Num, Str } from "chanfana";
 import { z } from "zod";
 
@@ -58,15 +58,15 @@ export const Recipe = z.object({
 		description: recipeFieldsMap['value'],
 	}),
 	consumablesCount: Num({
-		example: 2,
+		example: 1,
 		description: recipeFieldsMap['consumablesCount'],
 	}),
 	nonConsumablesCount: Num({
-		example: 2,
+		example: 0,
 		description: recipeFieldsMap['nonConsumablesCount'],
 	}),
 	outputsCount: Num({
-		example: 2,
+		example: 1,
 		description: recipeFieldsMap['outputsCount'],
 	}),
 	totalCount: Num({
