@@ -11,6 +11,7 @@ const PLAYER_PROFILE_ID = new PublicKey('pprofELXjL5Kck7Jn5hCpwAL82DpTkSYBENzahV
 // Shared application context
 export interface AppContext {
     connection: Connection
+    provider: AnchorProvider
     crafting: CraftingIDLProgram
     sage: SageIDLProgram
     playerProfile: PlayerProfileIDLProgram
@@ -29,6 +30,7 @@ export function createAppContext(connection: Connection): AppContext {
 
     return {
         connection,
+        provider,
         crafting: new Program(CRAFTING_IDL, CRAFTING_PROGRAM_ID, provider),
         sage: new Program(SAGE_IDL, SAGE_PROGRAM_ID, provider),
         playerProfile: new Program(PLAYER_PROFILE_IDL, PLAYER_PROFILE_ID, provider),
