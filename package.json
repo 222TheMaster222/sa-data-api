@@ -17,6 +17,7 @@
 		"@staratlas/crafting": "^1.1.0",
 		"@staratlas/data-source": "^0.8.3",
 		"@staratlas/factory": "^0.7.1",
+		"@staratlas/profile-faction": "^0.6.0",
 		"@staratlas/sage": "^1.8.6",
 		"@types/bn.js": "^5.1.6",
 		"@types/papaparse": "^5.3.15",
