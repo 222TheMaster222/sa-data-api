@@ -7,16 +7,15 @@ import Papa from 'papaparse';
 import { calculateCurrentResourceTimeStop, calculateResourceExhaustionTime, GLOBAL_SCALE_DECIMALS_2, Starbase, StarbaseState, StarbaseUpgradeState } from "@staratlas/sage";
 import { Faction } from "@staratlas/profile-faction";
 import { sectorToString } from "./utils";
-import { CraftingFacility } from "@staratlas/crafting";
 import BN from "bn.js";
 
 export class StarbaseList extends OpenAPIRoute {
 	schema = {
-		tags: ["Sectors"],
-		summary: "List Sectors",
+		tags: ["Starbases"],
+		summary: "List Starbases",
 		responses: {
 			"200": {
-				description: "Returns a list of sectors",
+				description: "Returns a list of starbases",
 				content: {
 					"text/csv": {
 						schema: z.string(),
