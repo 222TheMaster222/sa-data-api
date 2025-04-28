@@ -9,6 +9,7 @@ import { TokenPriceList } from "endpoints/tokenPriceList";
 import { MarketPricesList } from "endpoints/marketPricesList";
 import { RecipeList } from "endpoints/recipeList";
 import { StarbaseList } from "endpoints/starbaseList";
+import { ProfileNamesList } from "endpoints/playerProfileList";
 
 // Start a Hono app
 const app = new Hono();
@@ -22,6 +23,7 @@ const openapi = fromHono(app, {
 openapi.get("/api/fleets", FleetList);
 openapi.get("/api/market-prices", MarketPricesList);
 openapi.get("/api/mine-items", MineItemList);
+openapi.get("/api/profile-names", ProfileNamesList);
 openapi.get("/api/recipes", RecipeList);
 openapi.get("/api/resources", ResourceList);
 openapi.get("/api/sectors", SectorList);
