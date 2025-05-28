@@ -49,7 +49,7 @@ export class ContractList extends OpenAPIRoute {
 			getFleets(context),
 		]);
 
-		const results = contracts.filter(c => c.publicKey.equals(new PublicKey('6uQR1C98H5xywr5KtS2niRTLw4wPRVqMRhVWi87DUHpo'))).map(contract => {
+		const results = contracts.map(contract => {
 
 			const rental = contract.account.currentRentalState.equals(PublicKey.default)
 				? undefined
@@ -68,7 +68,6 @@ export class ContractList extends OpenAPIRoute {
 			const { contract: c, fleet: f, rental: r } = result;
 
 			const { cargoStats, miscStats, movementStats, } = (f.data.stats as ShipStats);
-
 
 			return {
 				'Contract Address': c.publicKey.toBase58(),
