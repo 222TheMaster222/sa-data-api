@@ -2,18 +2,21 @@ import { OpenAPIRoute } from "chanfana";
 import { z } from "zod";
 import { Connection, Keypair, PublicKey } from "@solana/web3.js";
 import Papa from 'papaparse';
-import { Program, AnchorProvider, BN, setProvider, utils, workspace } from "@coral-xyz/anchor";
-import { Srsly, IDL } from "../srsly/idl/srsly_idl"
+import { Program, AnchorProvider } from "@coral-xyz/anchor";
+import { Srsly } from "../srsly/idl/srsly"
+import idl from "../srsly/idl/srsly.json"
 import { createAppContext, getFleets } from "sage";
 import { byteArrayToString } from "@staratlas/data-source";
 import { Faction } from "@staratlas/profile-faction";
+import { ShipStats } from "@staratlas/sage";
+import { scaleStat } from "./utils";
 export class ContractList extends OpenAPIRoute {
 	schema = {
 		tags: ["Fleet Rental Contracts"],
 		summary: "List Fleet Rental Contracts",
 		responses: {
 			"200": {
-				description: "Returns a list of fleet rental contracts",
+				description: "Returns a list of fleetwallet rental contracts",
 				content: {
 					"text/csv": {
 						schema: z.string(),
@@ -38,7 +41,7 @@ export class ContractList extends OpenAPIRoute {
 			AnchorProvider.defaultOptions(),
 		);
 
-		const program = new Program<Srsly>(IDL, provider)
+		const program = new Program<Srsly>(idl, provider)
 
 		const [contracts, rentals, fleets] = await Promise.all([
 			program.account.contractState.all(),
@@ -46,7 +49,7 @@ export class ContractList extends OpenAPIRoute {
 			getFleets(context),
 		]);
 
-		const results = contracts.map(contract => {
+		const results = contracts.filter(c => c.publicKey.equals(new PublicKey('6uQR1C98H5xywr5KtS2niRTLw4wPRVqMRhVWi87DUHpo'))).map(contract => {
 
 			const rental = contract.account.currentRentalState.equals(PublicKey.default)
 				? undefined
@@ -63,6 +66,8 @@ export class ContractList extends OpenAPIRoute {
 
 		const data = results.map(result => {
 			const { contract: c, fleet: f, rental: r } = result;
+
+			const { cargoStats, miscStats, movementStats, } = (f.data.stats as ShipStats);
 
 
 			return {
@@ -81,7 +86,25 @@ export class ContractList extends OpenAPIRoute {
 				'Contract Version': c.account.version,
 				'Faction': Faction[f.data.faction],
 				'Fleet Label': byteArrayToString(f.data.fleetLabel),
-				'Rental Rate': r?.account.rate.toString(),
+				'Rental Rate': r?.account.rate,
+				'Cargo Capacity': cargoStats.cargoCapacity,
+				'Fuel Capacity': cargoStats.fuelCapacity,
+				'Ammo Capacity': cargoStats.ammoCapacity,
+				'Food / Sec': scaleStat(cargoStats.foodConsumptionRate, 4),
+				'Ammo / Sec': scaleStat(cargoStats.ammoConsumptionRate, 4),
+				'Mining Rate': scaleStat(cargoStats.miningRate, 4),
+				'Subwarp Speed': scaleStat(movementStats.subwarpSpeed, 6),
+				'Warp Speed': scaleStat(movementStats.warpSpeed, 6),
+				'Max Warp Distance': scaleStat(movementStats.maxWarpDistance, 2),
+				'Warp Cooldown': movementStats.warpCoolDown,
+				'Fuel Warp Consumption Rate': scaleStat(movementStats.warpFuelConsumptionRate, 2),
+				'Fuel Subwarp Consumption Rate': scaleStat(movementStats.subwarpFuelConsumptionRate, 2),
+				'Asteroid Exit Fuel': movementStats.planetExitFuelAmount,
+				'Scan Cooldown': miscStats.scanCoolDown,
+				'Crew': miscStats.requiredCrew,
+				'Passengers': miscStats.passengerCapacity,
+				'Scan Cost': miscStats.scanCost,
+				'SDU Per Scan': miscStats.sduPerScan,
 			}
 		})
 
