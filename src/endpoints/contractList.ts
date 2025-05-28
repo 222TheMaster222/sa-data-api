@@ -72,6 +72,7 @@ export class ContractList extends OpenAPIRoute {
 			return {
 				'Contract Address': c.publicKey.toBase58(),
 				'Rental State': c.account.currentRentalState.toBase58(),
+				'Available To Rent': c.account.currentRentalState.equals(PublicKey.default) ? true : false,
 				'Min Duration': c.account.durationMin.toString(),
 				'Max Duration': c.account.durationMax.toString(),
 				'Fleet': c.account.fleet.toBase58(),
