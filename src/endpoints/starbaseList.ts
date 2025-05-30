@@ -31,12 +31,9 @@ export class StarbaseList extends OpenAPIRoute {
 		const context = createAppContext(connection)
 
 		const allStarbases: Starbase[] = await getStarbases(context);
-		console.log('fetched starbases')
 
 		const game = await getGame(context);
-		console.log('fetched game', game)
 		const gameState = await getGameState(game.data.gameState, context);
-		console.log('fetched gamestate', gameState)
 
 		const currentGlobalTime = new BN((await getCurrentTimestampOnChain(connection)).toString())
 
